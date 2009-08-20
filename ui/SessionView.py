@@ -4,22 +4,23 @@ import pygtk
 import gtk
 import threading
 import time
+import datetime
 from core.Observer import  Observer
 from core.SessionStatus import SessionStatus
 from common.UpdateStatisticsWorker import *
 from ui.SessionRightKeyMenu import SessionRightKeyMenu
-PROTOCOL = 0
-ID = 1
-STATUS = 2
-TIME = 3
-PARAM = 4
-PORTS = 5
-ADDRSS = 6
-DESTINATION = 7
-ERRORINFO = 8
-BACKGROUND = 9
-
-SIZE = 20
+PROTOCOL     = 0
+ID           = 1
+STATUS       = 2
+TIME         = 3
+SERVICEGROUP = 4
+DESTINATION  = 5
+PORTS        = 6
+LOCALPORT    = 7
+ADDRSS       = 8
+ERRORINFO    = 9
+BACKGROUND   = 10
+SIZE         = 20
 
 
 """
@@ -27,7 +28,7 @@ SIZE = 20
 """
 class SessionView(Observer, UpdateInterface):
     def __init__(self, manager):
-        self.columnNames = ["Protocol","ID","Status","Time","ServiceGroup","Ports","Address", "Destination","Information"]
+        self.columnNames = ["Protocol","ID","Status","Time","ServiceGroup","Destination", "TargetPorts", "LocalPort", "Address", "Information"]
         
         self.statusMap = {SessionStatus.RUNNING:"Running", SessionStatus.STOPPED:"Stopped", SessionStatus.INITIAL:"Initial",\
                 SessionStatus.CONNECTING:"Connecting", SessionStatus.NETWORKERROR:"Failed", SessionStatus.EXECPTION:"Execption",\
@@ -44,21 +45,21 @@ class SessionView(Observer, UpdateInterface):
                           SessionStatus.PAUSE: "firebrick3"}
 
         
-        self.listStore = None
-        self.treeView = None
+        self.listStore    = None
+        self.treeView     = None
         self.scrollWindow = None
-        self.statics = None
-        
+        self.statics      = None
+        self.currentTime  = None
+        self.runTimeLable = gtk.Label("Time: 0:0")
         self.runningLabel = gtk.Label("Running: 0")
-        self.pauseLabel = gtk.Label("Pause: 0")
+        self.pauseLabel   = gtk.Label("Pause: 0")
         self.stoppedLabel = gtk.Label("Stopped: 0")
         self.initialLabel = gtk.Label("Initial: 0")
         self.failingLabel = gtk.Label("Faild: 0")
+        self.setupLabel   = gtk.Label("Setup: 0")
+        self.totalLabel   = gtk.Label("Total: 0")
         self.connectingLabel = gtk.Label("Connecting: 0")
-        self.exceptionLabel = gtk.Label("Exception: 0")
-        self.setupLabel = gtk.Label("Setup: 0")
-
-        self.totalLabel = gtk.Label("Total: 0")
+        self.exceptionLabel  = gtk.Label("Exception: 0")
         self.manager = manager
         
         # accelerate finding the session in session view.
@@ -84,18 +85,19 @@ class SessionView(Observer, UpdateInterface):
     def createView(self):
         """ protocol, id, status, time, address"""
         hBox = gtk.HBox(False, 9)
-        hBox.pack_start(self.totalLabel)
-        hBox.pack_start(self.setupLabel)
-        hBox.pack_start(self.runningLabel)
-        hBox.pack_start(self.pauseLabel)
-        hBox.pack_start(self.failingLabel)
-        hBox.pack_start(self.exceptionLabel)
-        hBox.pack_start(self.stoppedLabel)
-        hBox.pack_start(self.connectingLabel)
-        hBox.pack_start(self.initialLabel)
+        hBox.pack_start(self.totalLabel,  True,False,5)
+        hBox.pack_start(self.runTimeLable,True,False,5)
+        hBox.pack_start(self.setupLabel,  True,False,5)
+        hBox.pack_start(self.runningLabel,True,False,5)
+        hBox.pack_start(self.pauseLabel,  True,False,5)
+        hBox.pack_start(self.failingLabel,True,False,5)
+        hBox.pack_start(self.exceptionLabel, True,False,5)
+        hBox.pack_start(self.stoppedLabel, True, False,5)
+        hBox.pack_start(self.connectingLabel,True, False,5)
+        hBox.pack_start(self.initialLabel, True,False,5)
         
         vBox = gtk.VBox()
-        self.listStore = gtk.ListStore(str, int, str, int, str, str, str, str, str, str)
+        self.listStore = gtk.ListStore(str, int, str, int, str, str, str, str, str, str, str) 
         self.treeView = gtk.TreeView(self.listStore)
         self.selection = self.treeView.get_selection()
         self.selection.set_mode(gtk.SELECTION_MULTIPLE)
@@ -118,7 +120,7 @@ class SessionView(Observer, UpdateInterface):
         
         self.updateWorker.start()
         return vBox
-
+    
     def update(self, statics):  
         self.initialLabel.set_text("Initial: %d" % statics[SessionStatus.INITIAL])
         self.connectingLabel.set_text("Connecting: %d" % statics[SessionStatus.CONNECTING])
@@ -130,7 +132,19 @@ class SessionView(Observer, UpdateInterface):
         self.setupLabel.set_text("Setup: %d" % statics[SessionStatus.SETUP])
         total = statics.total()
         self.totalLabel.set_text("Total: %d" % total)
-        
+        self.displayTime(statics)
+
+    def displayTime(self, statics):
+        if statics[SessionStatus.RUNNING] > 0 or statics[SessionStatus.PAUSE] > 0:
+            if self.currentTime == None:
+                self.currentTime = datetime.datetime.now()
+            seconds = (datetime.datetime.now() - self.currentTime).seconds
+            self.runTimeLable.set_text("Time: %d:%d" % ((seconds / 3600), (seconds % 3600) / 60))
+        else:
+            #self.runTimeLable.set_text("Time: %d:%d" % (0,0))
+            self.currentTime = None
+
+
     def addNewSession(self, status):
         protocol = status.getProtocol()
         id = status.getId()
@@ -139,10 +153,11 @@ class SessionView(Observer, UpdateInterface):
         address = status.getAddress()
         colour = self.colourMap[status.getStatus()]
         param = status.getParam()
+        localport = "NoPort"         
         ports = "NoPort"
         destination = "NoAddress"
         errorInfo = ""
-        iterator = self.listStore.append([protocol, id, sessionStatus, runTime, param, ports, address, destination, errorInfo,colour])
+        iterator = self.listStore.append([protocol, id, sessionStatus, runTime, param, destination, ports, localport, address, errorInfo, colour])
         self.accelerate[id] = iterator
         
     def __getListStoreIter(self, id):
@@ -163,7 +178,7 @@ class SessionView(Observer, UpdateInterface):
     
     def __setError(self, iterator, error):
         self.listStore.set(iterator, ERRORINFO, error)
-        
+
     def updateSessionStatus(self, status):
         self.lock.acquire()
         iterator = self.__getListStoreIter(status.getId())
@@ -176,6 +191,8 @@ class SessionView(Observer, UpdateInterface):
                 if status.getStatus() & SessionStatus.SETUP:
                    self.__setError(iterator, "")
                    self.__setParams(iterator, status.getParamsFromRemote())
+                   localPort = status.getLocalPort()
+                   self.listStore.set(iterator, LOCALPORT, localPort)
                    
                 if status.getStatus() & SessionStatus.NETWORKERROR:
                     self.__setError(iterator, status.getErrorInfo())

@@ -26,3 +26,6 @@ class SessionImp:
     
     def getErrorInfo(self):
         pass
+
+    def getLocalPort(self):
+        pass

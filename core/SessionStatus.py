@@ -22,6 +22,7 @@ class SessionStatus:
         self.packetData = None
         self.session = None
         self.errorInfo = ""
+        self.localPort = ""
         
     def setParam(self,param):
         self.param = param
@@ -86,3 +87,8 @@ class SessionStatus:
     def getErrorInfo(self):
         return self.errorInfo
     
+    def setLocalPort(self, port):
+        self.localPort = port
+
+    def getLocalPort(self):
+        return self.localPort

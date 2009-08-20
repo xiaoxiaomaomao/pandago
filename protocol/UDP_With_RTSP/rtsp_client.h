@@ -46,6 +46,7 @@ typedef struct rtsp_client_t {
   int32_t errorCode;
   char m_recv_buffer[RECV_BUFF_DEFAULT_LEN + 1];
   char *local_url;
+  int32_t local_port;
   unsigned char* packetBuffer;
   unsigned int offset;
 } rtsp_client_t;

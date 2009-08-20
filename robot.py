@@ -80,7 +80,7 @@ if __name__ == "__main__":
     window = gtk.Window(gtk.WINDOW_TOPLEVEL)
     window.connect("delete_event", destory)
     window.add(mainViewUI)
-    window.set_size_request(646,630)
+    window.set_size_request(720,630)
     window.show_all()
     
     thread.start_new_thread(startRun, ())

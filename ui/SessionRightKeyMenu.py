@@ -5,30 +5,26 @@ from SessionMonitor import SessionMonitor
 ACTION = 0
 PARAM  = 1
 class SessionRightKeyMenu:
-    
     def __init__(self, manager):
         self.manager = manager
         self.itemsActions = { 
                         "Start" :      (self.start,  None),
-                        "2X"    :      (self.doXScale, 2),
-                        "3X"    :      (self.doXScale, 3),
-                        "4X"    :      (self.doXScale, 4),
-                        "6X"    :      (self.doXScale, 6),
-                        "8X"    :      (self.doXScale, 8),
-                        "9X"    :      (self.doXScale, 9),
-                        "-2X"   :      (self.doXScale,-2),
-                        "-3X"   :      (self.doXScale,-3),
-                        "-4X"   :      (self.doXScale,-4),
-                        "-6X"   :      (self.doXScale,-6),
-                        "-8X"   :      (self.doXScale,-8),
-                        "-9X"   :      (self.doXScale,-9), 
                         "Stop"  :      (manager.stop, None), 
                         "Pause/Play":  (manager.pause, None),
-                        "Monitor"   :  (self.createMonitor, None),
+                        "1X"    :      (self.doXScale, 1),
+                        "3X"    :      (self.doXScale, 3),
+                        "9X"    :      (self.doXScale, 9),
+                        "18X"   :      (self.doXScale, 18),
+                        "33X"   :      (self.doXScale, 33),
+                        "-3X"   :      (self.doXScale, -3),
+                        "-9X"   :      (self.doXScale, -9), 
+                        "-18X"  :      (self.doXScale, -18),
+                        "-33X"  :      (self.doXScale, -33),
+                        "Monitor" :    (self.createMonitor, None),
                       }
         
-        self.itemsName = ["Start", "2X", "3X", "4X", "6X","8X", "9X", "-2X", "-3X", "-4X", "-6X","-8X", "-9X",\
-                            "Stop","Pause/Play","Monitor"]
+        self.itemsName = ["Start", "Stop", "Pause/Play", "1X", "3X", "9X","18X","33X", \
+                "-3X", "-9X", "-18X","-33X", "Monitor"]
        
     def start(self, ids, param = None):
         self.manager.setup(ids)

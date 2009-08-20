@@ -11,6 +11,7 @@
 #define MICROSECOND 1000000
 
 #define mTRACE printf
+
 static void RTSP_LOCK()
 {
 }
@@ -176,6 +177,15 @@ static rtsp_client_t *rtsp_create_client (const char *url)
     }
     
     return client;
+}
+
+int rtsp_get_local_port(int handle)
+{
+    rtsp_client_t *client = (rtsp_client_t *)handle;
+    if(client == NULL){
+        return 0; 
+    }
+    return client -> local_port;
 }
 
 void rtsp_get_params(int handle, char* params)
