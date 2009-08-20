@@ -87,6 +87,7 @@ class RTSPSessionImp(SessionImp.SessionImp):
         self.paramsBuffer = ctypes.create_string_buffer(512)
         self.errorCode = CONNECT_FAILED
         self.curScale = 1
+        self.localPort = "No Port"
 
     def __initCapture(self):
         pass
@@ -108,6 +109,7 @@ class RTSPSessionImp(SessionImp.SessionImp):
         self.time = 0
         self.detectExceptTimes = 0
         self.curScale= 1
+        self.status = SessionStatus.SETUP
         if type(param) != int and  param.isdigit() == False:
             self.errorCode = PARAM_ERROR
             return SessionStatus.NETWORKERROR
@@ -116,7 +118,7 @@ class RTSPSessionImp(SessionImp.SessionImp):
         if self.handle == 0:
             self.errorCode = CONNECT_FAILED;
             return SessionStatus.NETWORKERROR
-        
+        self.localPort = str(self.rtsp.rtsp_get_local_port(self.handle))
         serverceGroupId = int(param)
         ret = self.rtsp.rtsp_open(self.handle, serverceGroupId)
         if ret != SUCCESS:
@@ -191,7 +193,7 @@ class RTSPSessionImp(SessionImp.SessionImp):
             if ret < 0:
                 self.__destory()
                 return SessionStatus.NETWORKERROR
-        
+        self.status = curSessionStatus
         return curSessionStatus
     
     def stop(self, param = None):
@@ -252,5 +254,7 @@ class RTSPSessionImp(SessionImp.SessionImp):
             return SessionStatus.NETWORKERROR
         
     def getPacketData(self):
-        return "IP 192.168.0.250 Demo Data"   
-  
+        return "^_^ Demo IP 192.168.0.250, next version support capture packet"   
+
+    def getLocalPort(self):
+        return self.localPort

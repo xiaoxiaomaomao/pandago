@@ -11,7 +11,7 @@ class SessionMonitor(Monitor):
     def mouseClick(self, widget, event, treeselection):
         (model, iter) = treeselection.get_selected()
         enditer = self.textbuffer.get_end_iter()
-        self.textbuffer.set_text(model.get_value(iter, 0) + '\n')
+        #self.textbuffer.set_text(model.get_value(iter, 0) + '\n')
         
     def createView(self):
         self.listStore = gtk.ListStore(str,str)

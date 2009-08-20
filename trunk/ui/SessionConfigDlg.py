@@ -10,16 +10,15 @@ class SessionConfigDlg:
         self.manager = manager
         self.view = view
         okButton = gtk.Button("OK", gtk.STOCK_OK)
-        
         cancelButton = gtk.Button("Cancel", gtk.STOCK_CANCEL)
 
         okButton.connect("clicked", self.onButton, self)
         cancelButton.connect("clicked", self.onCancel, self)
         self.dialog.action_area.pack_start(okButton,False,False)
         self.dialog.action_area.pack_start(cancelButton, False,False)
-        table = gtk.Table(5,2)
-        table.set_row_spacings(5)
-        table.set_col_spacings(5)
+        table = gtk.Table(6,2)
+        table.set_row_spacings(6)
+        table.set_col_spacings(6)
         frame = gtk.Frame("Configure")
         frame.add(table)
         
@@ -28,12 +27,16 @@ class SessionConfigDlg:
         serviceGroupLab = gtk.Label("ServiceGroup :")
         scaleLab        = gtk.Label("Scale :")
         numberLab       = gtk.Label("Number :")
+        startLab        = gtk.Label("Start : ") 
     
         hbox = gtk.HBox()
         self.singleRadio = gtk.RadioButton(None,"Individual")
         self.mutipleRadio = gtk.RadioButton(self.singleRadio,"Mutil")
-        self.configureFileRadio = gtk.RadioButton(self.mutipleRadio, "Config File");
-        self.configureFileRadio.connect("toggled", self.onConfigureFileRadio, self);
+        self.configureFileRadio = gtk.RadioButton(self.mutipleRadio, "Config File")
+        self.singleRadio.connect("toggled", self.onSingleRadio, self)
+        self.mutipleRadio.connect("toggled", self.onMutipleRadio, self)
+        self.configureFileRadio.connect("toggled", self.onConfigureFileRadio, self)
+
         self.singleRadio.set_active(True)
         
         hbox.pack_start(self.singleRadio)
@@ -44,7 +47,8 @@ class SessionConfigDlg:
         table.attach(hbox,0, 2, 1, 2)
         table.attach(addressLab, 0, 1, 2, 3)
         table.attach(serviceGroupLab, 0, 1, 3, 4)
-        table.attach(numberLab, 0, 1, 4, 5)
+        table.attach(startLab, 0, 1, 4, 5)
+        table.attach(numberLab, 0, 1, 5, 6)
    
         
         self.combox = gtk.combo_box_new_text()
@@ -58,28 +62,43 @@ class SessionConfigDlg:
         self.address.set_text("rtsp://192.168.0.");
         adjustment1 = gtk.Adjustment(0, 1, 2000, 1, 0, 0)
         adjustment2 = gtk.Adjustment(0, 0, 2000, 1, 0, 0)
+        adjustment3 = gtk.Adjustment(0, 0, 2000, 1, 0, 0)
  
         self.number       = gtk.SpinButton(adjustment1, 0, 0)
-        self.serviceGroup = gtk.SpinButton(adjustment2, 0, 0);
+        self.serviceGroup = gtk.SpinButton(adjustment2, 0, 0)
+        self.startPoint   = gtk.SpinButton(adjustment3, 0, 0)
+
+        self.startPoint.set_sensitive(False)
 
         table.attach(self.combox, 1, 2, 0, 1)
         table.attach(self.address, 1, 2, 2, 3)
         table.attach(self.serviceGroup ,1, 2, 3, 4)
-        table.attach(self.number, 1, 2, 4, 5)
+        table.attach(self.startPoint, 1, 2, 4, 5)
+        table.attach(self.number, 1, 2, 5, 6)
      
         self.dialog.vbox.pack_start(frame)
         self.dialog.show_all()
+
+    def onSingleRadio(self, widget, data = None):
+        if widget.get_active():
+            data.address.set_text("rtsp://192.168.0")
+            data.serviceGroup.set_sensitive(True)
+            data.number.set_sensitive(True)
+            data.startPoint.set_sensitive(False)
+
+    def onMutipleRadio(self, widget, data = None):
+        if widget.get_active():
+            data.address.set_text("rtsp://192.168.0")
+            data.serviceGroup.set_sensitive(True)
+            data.number.set_sensitive(True)
+            data.startPoint.set_sensitive(True)
 
     def onConfigureFileRadio(self, widget, data = None):
         if widget.get_active():
             data.address.set_text("./config.cfg")
             data.serviceGroup.set_sensitive(False)
             data.number.set_sensitive(False)
-        else:
-            data.address.set_text("rtsp://192.168.")
-            data.serviceGroup.set_sensitive(True)
-            data.number.set_sensitive(True)
-    
+            data.startPoint.set_sensitive(False)
     
     def onButton(self, widget, data):
         model    = data.combox.get_model()
@@ -88,9 +107,10 @@ class SessionConfigDlg:
         address  = data.address.get_text()
         number   = data.number.get_value_as_int()
         serviceGroup    = data.serviceGroup.get_value_as_int()
+        startPoint = data.startPoint.get_value_as_int()
 
         if data.mutipleRadio.get_active():
-            createSession(protocol, address, serviceGroup, number,data.manager, self.view)
+            createSession(protocol, address, serviceGroup, number, data.manager, self.view, startingPoint = startPoint)
             
         if data.singleRadio.get_active():
             if address.find(WILDCARD) >= 0:
@@ -107,7 +127,7 @@ class SessionConfigDlg:
                 messageBox = gtk.MessageDialog(data.dialog, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_NONE, m)
                 messageBox.show_all()
                 return False
-            createSession(config.protocol, config.address, config.param, config.number,data.manager, self.view)
+            createSession(config.protocol, config.address, config.param, config.number, data.manager, self.view)
         
         self.dialog.destroy()
             

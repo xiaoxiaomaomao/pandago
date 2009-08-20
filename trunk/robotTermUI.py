@@ -61,7 +61,7 @@ class WatchDog(UpdateInterface):
             hours = runTime / 3600
             seconds = (runTime % 3600) / 60
             info = "%d Hours %d minutes > runResult" % (hours,seconds)
-            os.system("echo" + info)
+            os.system("echo " + info)
             global Stopped
             Stopped = True
             sys.exit(0)
@@ -76,33 +76,35 @@ Pressure = 3
 
 if __name__ == '__main__':
     HELP = "run the program like: ./robot.py -u will turn on the ui,-n will run without ui"         
-    ARGS = ["-n","-h","-u"]
-    if len(sys.argv) == 2 and sys.argv[1] == '-h':
-        print HELP
-        sys.exit(1)
-        
-    manager = SessionManager()
+    ARGS = ["-h","-n"]
+
     try:
+        manager = SessionManager()
         robot = TestRobot(manager)
         config = readConfigFromFile("./config.cfg")
         if config == None:
-            print 'Please specify the configure file or have wrong with configuration file'
+            print 'Error with configuration file'
             sys.exit(-1)
-        if sys.argv[1] == '-u':
+        if len(sys.argv) == 2:
+            if sys.argv[1] == '-h':
+                print HELP
+                sys.exit(0)
+            if sys.argv[1] == '-n':
+                createSession(config.protocol, config.address, config.param, config.number, manager, None, TestRobot, Pressure)
+        if len(sys.argv) == 1:
             ui = ui_term.ui_term(manager)
             ui.createView()
-            createSession(config.protocol,config.address,config.param,config.number,manager,ui,TestRobot,Pressure)
-        elif sys.argv[1] == '-n':
-            createSession(config.protocol,config.address,config.param,config.number,manager,None,TestRobot,Pressure)
-        thread.start_new_thread(startRun,(manager,))
-        startWatchDog(manager,None)
-        
+            createSession(config.protocol, config.address, config.param, config.number, manager, ui, TestRobot, Pressure)
+
+        thread.start_new_thread(startRun, (manager,))
+        startWatchDog(manager, None)
+
         while Stopped != True:
-            time.sleep(1)
-    
+            time.sleep(10000)
+
     except KeyboardInterrupt:
         try:
             ui.restore_scrn()
         except NameError:
             pass
-    sys.exit(0)
+        sys.exit(1)

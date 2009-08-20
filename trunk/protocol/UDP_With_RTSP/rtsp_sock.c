@@ -113,7 +113,7 @@ int rtsp_create_socket (rtsp_client_t *client)
 		ret = 0;
 	}
 	fcntl(sockfd, F_SETFL, block_flag);
-	
+
 	if (ret == -1)
 	{
 		close(sockfd);
@@ -121,6 +121,12 @@ int rtsp_create_socket (rtsp_client_t *client)
 		RTSP_ERR("couldn't connect socket, timeout 5 second\n");
 		return -1;
 	}
+
+    struct sockaddr_in client_socket;
+    socklen_t  client_len = sizeof(struct sockaddr_in);
+    getsockname(sockfd, (struct sockaddr *)&client_socket, &client_len);
+    client -> local_port = ntohs(client_socket.sin_port);
+
 	return 0;
 }
 

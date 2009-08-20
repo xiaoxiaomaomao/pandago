@@ -2,7 +2,7 @@
 
 import os
 APP_NAME = 'Panda'
-APP_VERSION = '1.4'
+APP_VERSION = '1.6.1'
 OS_NAME = os.name
 
 import sys
@@ -39,7 +39,7 @@ class PandaUI:
         vbox.pack_start(self.panel,False)
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.set_title(APP_NAME + APP_VERSION)
-        self.window.set_size_request(666,630)
+        self.window.set_size_request(720,630)
         self.window.connect("delete_event", self.__destory)
         self.window.add(vbox)
         self.window.show_all()

@@ -13,8 +13,9 @@ ADDR = 2
 TIME = 3
 STATUS = 4
 DESTINATION = 5
+CLIENT_PORT = 6
 
-HEAD = ['PROTOCOL','ID','ADDR','TIME','STATUS','DESTINATION']
+HEAD = ['PROTOCOL','ID','ADDR','TIME','STATUS','DESTINATION','CLIENT_PORT']
 
 WIDTH = {
     "PROTOCOL"        :        10,
@@ -22,10 +23,11 @@ WIDTH = {
     "ADDR"            :        40,
     "TIME"            :        4,
     "STATUS"          :        14,
-    "DESTINATION"     :        16
+    "DESTINATION"     :        16,
+    "CLIENT_PORT"     :        12
         }
 
-INFO = ["TOTAL","INIT","START","PLAY","STOP"]
+INFO = ["TOTAL","INIT","START","PLAY","PAUSE","STOP"]
 
 ansi = {
     'black': '\033[0;30m',
@@ -77,106 +79,126 @@ ansi = {
 }
 
 char = {
-	'pipe':'|',
-	'colon':':',
-	'gt':'>',
-	'space':' ',
-	'dash':'-',
+    'pipe':'|',
+    'colon':':',
+    'gt':'>',
+    'space':' ',
+    'dash':'-',
 }
 
 class ui_term(Observer,UpdateInterface):
-	def __init__(self,manager = None):	
-		self.statusMap = {
-			SessionStatus.RUNNING:"Running",
-			SessionStatus.STOPPED:'Stopped',
-			SessionStatus.INITIAL:'Initial',
-			SessionStatus.CONNECTING:'Connecting',
-			SessionStatus.NETWORKERROR:'Failed',
-			SessionStatus.EXECPTION:'Exception',
-			SessionStatus.REMOVED:'Remove',
-			SessionStatus.PAUSE:'Pause',
-			SessionStatus.SETUP:'Setup',
-		}
-		self.session_records = []
-		self.statics = None
-		self.manager = manager
-		self.accelerate = {}
-		self.updateWorker = UpdateStatisticsWorker(self,manager)
-		self.lock = threading.Lock()
+    def __init__(self,manager = None):    
+        self.statusMap = {
+            SessionStatus.RUNNING:"Running",
+            SessionStatus.STOPPED:'Stopped',
+            SessionStatus.INITIAL:'Initial',
+            SessionStatus.CONNECTING:'Connecting',
+            SessionStatus.NETWORKERROR:'Failed',
+            SessionStatus.EXECPTION:'Exception',
+            SessionStatus.REMOVED:'Remove',
+            SessionStatus.PAUSE:'Pause',
+            SessionStatus.SETUP:'Setup',
+        }
+        self.session_records = []
+        self.statics = None
+        self.manager = manager
+        self.accelerate = {}
+        self.updateWorker = UpdateStatisticsWorker(self,manager)
+        self.lock = threading.Lock()
+        self.info = ""
+        self.count = 0
 
-	def __format(self,array):
-		array[0] = ansi['darkblue'] + str(array[0]) + " " * (WIDTH["PROTOCOL"] - len(str(array[0]))) + ansi['default'] 
-		array[1] = ansi['darkyellow'] + str(array[1]) + " " * (WIDTH["ID"] - len(str(array[1]))) + ansi['default']
-		array[2] = ansi['white'] + str(array[2]) + " " * (WIDTH["ADDR"] - len(str(array[2]))) + ansi['default'] 
-		array[3] = ansi['darkgreen'] + str(array[3]) + " " * (WIDTH["TIME"] - len(str(array[3]))) + ansi['default']
-		array[4] = ansi['darkred'] + str(array[4]) + " " * (WIDTH["STATUS"] - len(str(array[4]))) + ansi['default']
-		array[5] = ansi['default'] + str(array[5]) + " " * (WIDTH["DESTINATION"] - len(str(array[5])))
-		arraystr = ""
-		for each in array:
-			arraystr += str(each)
-		return arraystr
+    def __format(self,array):
+        array[0] = ansi['darkblue'] + str(array[0]) + " " * (WIDTH["PROTOCOL"] - len(str(array[0]))) + ansi['default'] 
+        array[1] = ansi['darkyellow'] + str(array[1]) + " " * (WIDTH["ID"] - len(str(array[1]))) + ansi['default']
+        array[2] = ansi['white'] + str(array[2]) + " " * (WIDTH["ADDR"] - len(str(array[2]))) + ansi['default'] 
+        array[3] = ansi['darkgreen'] + str(array[3]) + " " * (WIDTH["TIME"] - len(str(array[3]))) + ansi['default']
+        if array[4].find("Failed") == -1:
+            array[4] = ansi['darkgreen'] + str(array[4]) + " " * (WIDTH["STATUS"] - len(str(array[4]))) + ansi['default']
+        else:
+            array[4] = ansi['darkred'] + str(array[4]) + " " * (WIDTH["STATUS"] - len(str(array[4]))) + ansi['default']
+        array[5] = ansi['default'] + str(array[5]) + " " * (WIDTH["DESTINATION"] - len(str(array[5])))
+        array[6] = ansi['darkyellow'] + str(array[6]) + " " * (WIDTH["CLIENT_PORT"] - len(str(array[6]))) + ansi['default']
+        arraystr = ""
+        for each in array:
+            arraystr += str(each)
+        return arraystr
 
-	def restore_scrn(self):
-		sys.stdout.write(ansi['default'])
+    def restore_scrn(self):
+        sys.stdout.write(ansi['default'])
 
-	def display_head(self):
-		string = self.__format(HEAD)		
-		sys.stdout.write(string + '\n')
+    def display_head(self):
+        string = self.__format(HEAD)        
+        sys.stdout.write(string + '\n')
 
-	def display_info(self,total = 0,setup = 0,run = 0,fail = 0,stop = 0):
-		str = ("Total = %d,Setup = %d,Run = %d,Failed = %d,Stop = %d\n")%(total,setup,run,fail,stop)
-		sys.stdout.write(ansi['white'] + str + '\n')
-		
-	def display_line(self,array):
-		string = self.__format(array)	
-		sys.stdout.write(string + '\n')
-		time.sleep(0.5)
+    def display_info(self):
+        sys.stdout.write(ansi['white'] + self.info + '\n')
+        
+    def display_line(self,array):
+        string = self.__format(array)    
+        sys.stdout.write(string + '\n')
 
-	def __del__(self):
-		self.manager.stop()
-	
-	def createView(self): 	
-		self.display_head()
-		self.updateWorker.start()
+    def __del__(self):
+        self.manager.stop()
+    
+    def createView(self):     
+        self.display_head()
+        self.updateWorker.start()
 
-	def update(self,statics):
-		total = statics.total()
-		setup = statics[SessionStatus.SETUP]
-		run = statics[SessionStatus.RUNNING] 
-		stop = statics[SessionStatus.STOPPED]
-		fail = statics[SessionStatus.NETWORKERROR]
-		self.display_info(total,setup,run,fail,stop)
-		time.sleep(1)
+    def update(self,statics):
+        total   = statics.total()
+        setup   = statics[SessionStatus.SETUP]
+        run     = statics[SessionStatus.RUNNING] 
+        stop    = statics[SessionStatus.STOPPED]
+        fail    = statics[SessionStatus.NETWORKERROR]
+        connect = statics[SessionStatus.CONNECTING]
+        paused  = statics[SessionStatus.PAUSE]
+        initial = statics[SessionStatus.INITIAL]
 
-	def addNewSession(self,status):
-		protocol = status.getProtocol()
-		id = status.getId()
-		sessionStatus = self.statusMap[status.getStatus()]
-		runTime = status.getTime()
-		address = status.getAddress()
-		destination = "NoAddress"
-		session_record = [protocol,id,address,runTime,sessionStatus,destination]
-		self.accelerate[id] = session_record
-		self.session_records.append(session_record)
+        
+        self.info = str("\nTotal = %d   Initial = %d   Connect = %d   Setup = %d   Run = %d   Paused = %d   Failed = %d   Stop = %d\n" 
+                        % (total, initial, connect, setup, run, paused, fail, stop))
 
-	def __clearStoppedSession(self,id):
-		del self.accelerate[id]
-		self.session_records.remove[id]
+    def addNewSession(self,status):
+        protocol = status.getProtocol()
+        id = status.getId()
+        sessionStatus = self.statusMap[status.getStatus()]
+        runTime = status.getTime()
+        address = status.getAddress()
+        params = status.getParamsFromRemote()
+        destination = "NoAddress"
+        port = "NoPort"
+        session_record = [protocol,id,address,runTime,sessionStatus,destination,port]
+        self.accelerate[id] = session_record
+        self.session_records.append(session_record)
+        self.display_line(session_record)
 
-	def updateSessionStatus(self,status):
-		self.lock.acquire()
-		if status.getId() in self.accelerate.keys():
-			id = status.getId()
-			self.accelerate[id][TIME] = status.getTime()
-			self.accelerate[id][STATUS] = self.statusMap[status.getStatus()]
-		else:
-			self.addNewSession(status)
-		for each in self.session_records:
-			self.display_line(each)
-		self.lock.release()	
+    def __clearStoppedSession(self,id):
+        del self.accelerate[id]
+        self.session_records.remove[id]
 
-	def updateView(self,status):
-		self.updateSessionStatus(status)
+    def updateSessionStatus(self,status):
+        self.lock.acquire()
+        if status.getId() in self.accelerate.keys():
+            id = status.getId()
+            self.accelerate[id][STATUS] = self.statusMap[status.getStatus()]
+            self.accelerate[id][TIME] = status.getTime()
+            if self.accelerate[id][STATUS] == "Setup":
+                self.accelerate[id][DESTINATION] = status.getParamsFromRemote()['destination']
+                self.accelerate[id][CLIENT_PORT] = status.getParamsFromRemote()['client_port']
+            self.count += 1
+            if self.count > len(self.accelerate.keys()):
+                for each in self.session_records:
+                    self.display_line(each)
+                self.display_info()
+                time.sleep(1.5)
+                self.count = 0
+        else:
+            self.addNewSession(status)
+        self.lock.release()  
 
-if __name__ == '__main__':	
-	pass
+    def updateView(self,status):
+        self.updateSessionStatus(status)
+
+if __name__ == '__main__':    
+    pass

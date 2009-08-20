@@ -49,7 +49,9 @@ class Session(Subject, SessionAction):
  
         result = self.sessionImp.setup(status.getAddress(), param)
         status.setStatus(result)
- 
+
+        status.setLocalPort(self.sessionImp.getLocalPort())    
+
         if result == SessionStatus.NETWORKERROR:
             status.setErrorInfo(self.sessionImp.getErrorInfo())
             

@@ -1,9 +1,9 @@
 import sys
 GROUP_SIZE = 2
 
-def createSession(protocol, address, param, number, manager, view, monitorClass = None, groupSize = GROUP_SIZE):
+def createSession(protocol, address, param, number, manager, view, monitorClass = None, groupSize = GROUP_SIZE,startingPoint = 0):
         groupsNum = number / groupSize
-        index = 0
+        index = startingPoint
         for i in xrange(0, groupsNum):
             group = manager.createSessionGroup(protocol,view)
             for i in xrange(0, groupSize):
@@ -11,8 +11,7 @@ def createSession(protocol, address, param, number, manager, view, monitorClass 
                     group.addSession(address.replace('*', str(index)), param, monitorClass(manager))
                 else:
                     group.addSession(address.replace('*', str(index)), param, None)
-
-                    index += 1
+                index += 1
 
         if number % groupSize >= 0:
             group = manager.createSessionGroup(protocol,view)
