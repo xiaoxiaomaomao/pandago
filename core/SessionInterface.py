@@ -1,5 +1,5 @@
 #!/usr/bin/python
-class SessionImp:
+class SessionInterface:
     def getStatus(self):
         pass
 
