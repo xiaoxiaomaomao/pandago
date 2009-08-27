@@ -1,5 +1,5 @@
 from Subject import Subject
-from SessionImp import SessionImp
+from SessionInterface import SessionInterface
 from SessionStatus import SessionStatus
 from SessionAction import SessionAction
 from Observer import Observer
@@ -75,7 +75,7 @@ class Session(Subject, SessionAction):
         if result == SessionStatus.NETWORKERROR:
             self.status.setErrorInfo(self.sessionImp.getErrorInfo())
             
-        self.status.setStatus(result)
+        self.status.setStatus(self.sessionImp.getStatus())
         self.notifyObserver()
         self.notifyMonitors()
         return False
@@ -85,7 +85,7 @@ class Session(Subject, SessionAction):
             result = self.sessionImp.pause(param)
             if result == SessionStatus.NETWORKERROR:
                 self.status.setErrorInfo(self.sessionImp.getErrorInfo())
-            self.status.setStatus(result)
+            self.status.setStatus(self.sessionImp.getStatus())
             
     def getStatus(self):
         return self.status

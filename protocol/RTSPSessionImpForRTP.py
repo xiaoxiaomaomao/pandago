@@ -3,7 +3,7 @@ import sys
 import ctypes
 import threading
 import time
-from core import SessionImp
+from core.SessionInterface import SessionInterface
 from core.SessionStatus import SessionStatus
 import string
 import os
@@ -73,7 +73,7 @@ ErrorNoToStr = {SUCCESS: "Success",
                 }
 LIBDIR = os.path.abspath(os.path.dirname(__file__))
 rtspHandle = ctypes.CDLL(LIBDIR + "/RTP_With_RTSP/librtspforrtp.so")
-class RTSPSessionImpForRTP(SessionImp.SessionImp):
+class RTSPSessionImpForRTP(SessionInterface):
     EXECPTION_TIME = 20
     def __init__(self):
         global rtspHandle
