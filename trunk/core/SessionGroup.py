@@ -6,7 +6,7 @@ import SessionStatistics
 from Observer import Observer
 from Subject import Subject
 from SessionStatus import SessionStatus
-from SessionImp import SessionImp
+from SessionInterface import SessionInterface
 from SessionAction import SessionAction
 from SessionFactory import SessionFactory
 from ActionComposite import ActionComposite

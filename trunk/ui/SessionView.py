@@ -4,7 +4,6 @@ import pygtk
 import gtk
 import threading
 import time
-import datetime
 from core.Observer import  Observer
 from core.SessionStatus import SessionStatus
 from common.UpdateStatisticsWorker import *
@@ -42,7 +41,7 @@ class SessionView(Observer, UpdateInterface):
                           SessionStatus.CONNECTING:"yellow2",\
                           SessionStatus.NETWORKERROR:"red",SessionStatus.EXECPTION:"Orange",\
                           SessionStatus.REMOVED:"black",\
-                          SessionStatus.PAUSE: "firebrick3"}
+                          SessionStatus.PAUSE: "chocolate"}
 
         
         self.listStore    = None
@@ -55,7 +54,7 @@ class SessionView(Observer, UpdateInterface):
         self.pauseLabel   = gtk.Label("Pause: 0")
         self.stoppedLabel = gtk.Label("Stopped: 0")
         self.initialLabel = gtk.Label("Initial: 0")
-        self.failingLabel = gtk.Label("Faild: 0")
+        self.failingLabel = gtk.Label("Failed: 0")
         self.setupLabel   = gtk.Label("Setup: 0")
         self.totalLabel   = gtk.Label("Total: 0")
         self.connectingLabel = gtk.Label("Connecting: 0")
@@ -137,11 +136,10 @@ class SessionView(Observer, UpdateInterface):
     def displayTime(self, statics):
         if statics[SessionStatus.RUNNING] > 0 or statics[SessionStatus.PAUSE] > 0:
             if self.currentTime == None:
-                self.currentTime = datetime.datetime.now()
-            seconds = (datetime.datetime.now() - self.currentTime).seconds
+                self.currentTime = time.time()
+            seconds = (int)(time.time() - self.currentTime)
             self.runTimeLable.set_text("Time: %d:%d" % ((seconds / 3600), (seconds % 3600) / 60))
         else:
-            #self.runTimeLable.set_text("Time: %d:%d" % (0,0))
             self.currentTime = None
 
 

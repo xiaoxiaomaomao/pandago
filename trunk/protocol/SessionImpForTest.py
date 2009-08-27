@@ -4,10 +4,10 @@ import ctypes
 import threading
 import random
 import time
-from core import SessionImp
+from core.SessionInterface import SessionInterface
 from core.SessionStatus import SessionStatus
 
-class SessionImpForTest(SessionImp.SessionImp):
+class SessionImpForTest(SessionInterface):
     def __init__(self):
         self.status = SessionStatus.INITIAL
         self.time = 0
@@ -49,9 +49,6 @@ class SessionImpForTest(SessionImp.SessionImp):
 
     def keepAlive(self):
         self.time += 1
-        if self.time > 5:
-            self.status =  SessionStatus.NETWORKERROR
-            return SessionStatus.NETWORKERROR
        
     def getErrorInfo(self):
         return "fails"

@@ -3,7 +3,7 @@ import sys
 import ctypes
 import threading
 import time
-from core import SessionImp
+from core.SessionInterface import SessionInterface
 from core.SessionStatus import SessionStatus
 import string
 import os
@@ -73,7 +73,7 @@ ErrorNoToStr = {SUCCESS: "Success",
                 }
 LIBDIR = os.path.abspath(os.path.dirname(__file__))
 rtspHandle = ctypes.CDLL(LIBDIR + "/UDP_With_RTSP/librtsp.so")
-class RTSPSessionImp(SessionImp.SessionImp):
+class RTSPSessionImp(SessionInterface):
     EXECPTION_TIME = 20
     def __init__(self):
         global rtspHandle
@@ -88,7 +88,7 @@ class RTSPSessionImp(SessionImp.SessionImp):
         self.errorCode = CONNECT_FAILED
         self.curScale = 1
         self.localPort = "No Port"
-
+        self.isKeepAliveFaield = False #FIXME
     def __initCapture(self):
         pass
     
@@ -109,6 +109,7 @@ class RTSPSessionImp(SessionImp.SessionImp):
         self.time = 0
         self.detectExceptTimes = 0
         self.curScale= 1
+        self.isKeepAliveFaield = False
         self.status = SessionStatus.SETUP
         if type(param) != int and  param.isdigit() == False:
             self.errorCode = PARAM_ERROR
@@ -205,6 +206,8 @@ class RTSPSessionImp(SessionImp.SessionImp):
     
     def getStatus(self):
         if self.handle == 0:
+            if self.isKeepAliveFaield: #FIXME
+                return SessionStatus.NETWORKERROR
             return SessionStatus.STOPPED
         
         ret = self.rtsp.rtsp_get_state(self.handle)
@@ -251,6 +254,8 @@ class RTSPSessionImp(SessionImp.SessionImp):
         ret = self.rtsp.rtsp_keepalive(self.handle)
         if ret < 0:
             self.__setErrorCodeNo()
+            self.__destory()
+            self.isKeepAliveFaield = True
             return SessionStatus.NETWORKERROR
         
     def getPacketData(self):
